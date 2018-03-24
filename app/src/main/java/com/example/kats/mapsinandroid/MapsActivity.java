@@ -47,6 +47,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Location lastLocation;
     private Marker currentLocationMarker;
     public static final int REQUEST_LOCATION_CODE = 99;
+    int PROXIMITY_RADIUS = 10000;
+    double latitude,longitude;
 
 
     @Override
@@ -181,42 +183,106 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void onClick(View v)
     {
-        if(v.getId() == R.id.B_Search)
+        Object dataTransfer[] = new Object[2];
+        //first object will be mMap , scnd will be url
+
+        GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
+
+        switch (v.getId())
         {
-            EditText tf_location = (EditText)findViewById(R.id.TF_location);
-            String location = tf_location.getText().toString();
+            case R.id.B_Search:
+            {
+                EditText tf_location = (EditText) findViewById(R.id.TF_location);
+                String location = tf_location.getText().toString();
 
-            List<Address> addressList = null;
+                List<Address> addressList = null;
 
-            MarkerOptions mo = new MarkerOptions();
+                MarkerOptions mo = new MarkerOptions();
 
-            if(! location.equals("")) {
-                //if no an empty string
-                //use geocoder class here
+                if (!location.equals("")) {
+                    //if no an empty string
+                    //use geocoder class here
 
-                Geocoder geocoder = new Geocoder(this);
-                try {
-                    addressList = geocoder.getFromLocationName(location , 5);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    Geocoder geocoder = new Geocoder(this);
+                    try {
+                        addressList = geocoder.getFromLocationName(location, 5);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    //search for a particular loaction ; put a marker on those 2 3 result addresses it gives
+
+                    for (int i = 0; i < addressList.size(); i++) {
+                        Address myAddress = addressList.get(i);
+                        LatLng latLng = new LatLng(myAddress.getLatitude(), myAddress.getLongitude());
+                        mo.position(latLng);
+                        mo.title("Your Search Result");
+                        mMap.addMarker(mo);
+
+                        mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+                    }
+
+
                 }
-
-                //search for a particular loaction ; put a marker on those 2 3 result addresses it gives
-
-                for(int i=0 ; i<addressList.size() ; i++)
-                {
-                    Address myAddress = addressList.get(i);
-                    LatLng latLng = new LatLng(myAddress.getLatitude() , myAddress.getLongitude());
-                    mo.position(latLng);
-                    mo.title("Your Search Result");
-                    mMap.addMarker(mo);
-
-                    mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
-                }
-
 
             }
+
+            break;
+
+            case R.id.B_Hospital :
+                mMap.clear(); //remove all the markers from the map
+                String hospital = "hospital";
+                String url = getUrl(latitude , longitude , hospital);
+
+
+                dataTransfer[0] = mMap;
+                dataTransfer[1] = url;
+
+                getNearbyPlacesData.execute(dataTransfer);
+
+                Toast.makeText(this , "Showing Nearby Hospitals", Toast.LENGTH_LONG ).show();
+                break;
+
+            case R.id.B_Restaurant :
+
+                mMap.clear(); //remove all the markers from the map
+                String restaurant = "restaurant";
+                url = getUrl(latitude , longitude , restaurant);
+
+                dataTransfer[0] = mMap;
+                dataTransfer[1] = url;
+
+                getNearbyPlacesData.execute(dataTransfer);
+
+                Toast.makeText(this , "Showing Nearby Restaurants", Toast.LENGTH_LONG ).show();
+                break;
+
+            case R.id.B_School :
+
+                mMap.clear(); //remove all the markers from the map
+                String school = "school";
+                url = getUrl(latitude , longitude , school);
+
+                dataTransfer[0] = mMap;
+                dataTransfer[1] = url;
+
+                getNearbyPlacesData.execute(dataTransfer);
+
+                Toast.makeText(this , "Showing Nearby Schools", Toast.LENGTH_LONG ).show();
+                break;
         }
+    }
+
+    private String getUrl(double latitude , double longitude , String nearbyPlace)
+    {
+        StringBuilder googlePlaceUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
+        googlePlaceUrl.append("location"+"="+latitude+","+longitude);
+        googlePlaceUrl.append("&radius="+PROXIMITY_RADIUS);
+        googlePlaceUrl.append("&type="+nearbyPlace);
+        googlePlaceUrl.append("&sensor=true");
+        googlePlaceUrl.append("&key="+"AIzaSyBYmrr4AhFiKSbHEL5G3IZ-e-DPiPa1HEc");
+
+        return googlePlaceUrl.toString();
     }
 
 
